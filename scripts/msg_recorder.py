@@ -6,9 +6,10 @@ from std_msgs.msg import String
 import rosbag
 
 import time
+import os
 
 sub_count = 0
-bag = rosbag.Bag("../data/test.bag", 'w')
+bag = rosbag.Bag(os.path.dirname(__file__) + "/../data/test.bag", 'w')
 
 def callback(message, id):
     global sub_count, bag
@@ -25,8 +26,8 @@ def callback(message, id):
         bag.close()
 
         sub_count += 1
-        FILENAME = "../data/test" + str(sub_count) + ".bag"
-        #print "file name: ", FILENAME
+        FILENAME = os.path.dirname(__file__) + "/../data/test" + str(sub_count) + ".bag"
+        #print "file name: ", os.path.dirname(__file__) + "/../data/test"
         bag = rosbag.Bag(FILENAME, 'w')
         
     
