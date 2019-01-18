@@ -5,30 +5,31 @@ import rospy
 from std_msgs.msg import String
 import rosbag
 
+import time
+import os
 
 sub_count = 0
-#bag = rosbag.Bag("../data/test.bag", 'w')
+bag = rosbag.Bag(os.path.dirname(__file__) + "/../data/test.bag", 'w')
 
 def callback(message, id):
-    global sub_count
+    global sub_count, bag
 
     if str(id) == "0":
-        bag = rosbag.Bag("../data/test.bag", 'w')
         print "recieved: /chatter"
         print message.data
         try:
             bag.write("/chatter", message)
-        finally:
-            bag.close()
+        except:
+            pass
     else:
         print "recieved: /reporter"
-        FILENAME = "../data/"+ message.data + ".bag"
-        #print "file name: ", FILENAME
+        bag.close()
+
+        sub_count += 1
+        FILENAME = os.path.dirname(__file__) + "/../data/test" + str(sub_count) + ".bag"
+        #print "file name: ", os.path.dirname(__file__) + "/../data/test"
         bag = rosbag.Bag(FILENAME, 'w')
-        try:
-            bag.write("/reporter", message)
-        finally:
-            bag.close()
+        
     
     
 
@@ -38,3 +39,6 @@ if __name__ == "__main__":
     sub2 = rospy.Subscriber("/reporter", String, callback, callback_args=1)
 
     rospy.spin()
+
+    bag.close()
+    time.sleep(1)
