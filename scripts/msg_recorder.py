@@ -8,9 +8,11 @@ import rosbag
 import time
 import os
 
-sub_count = 0
+sub_count = 0  #ファイルに書き込むサイズ制限用
 file_count = 0
-bag = rosbag.Bag(os.path.dirname(__file__) + "/../data/test.bag", 'w')
+data_dir = os.path.dirname(__file__) + "/../data/"
+
+bag = rosbag.Bag(data_dir + "test.bag", 'w')
 
 def callback(message, id):
     global file_count, sub_count, bag
@@ -18,7 +20,7 @@ def callback(message, id):
     if str(id) == "0":
         if sub_count < 20:
             print "recieved: /chatter"
-            print message.data
+            #print message.data
             try:
                 bag.write("/chatter", message)
                 sub_count += 1
@@ -28,14 +30,14 @@ def callback(message, id):
             bag.close()
             sub_count = 0
             file_count += 1
-            FILENAME = os.path.dirname(__file__) + "/../data/test" + str(file_count) + ".bag"
+            FILENAME = data_dir + "test" + str(file_count) + ".bag"
             bag = rosbag.Bag(FILENAME, 'w')
     else:
         print "recieved: /reporter"
         bag.close()
 
         before = str(bag.filename)
-        renamed_file = os.path.dirname(__file__) + "/../data/test" + str(message.data)+".bag"
+        renamed_file = data_dir + str(message.data) + ".bag"
 
         with rosbag.Bag(renamed_file, "w") as renamebag:
             for topic, msg, time in rosbag.Bag(before).read_messages():
@@ -43,8 +45,7 @@ def callback(message, id):
         os.remove(before)
         
         file_count += 1
-        FILENAME = os.path.dirname(__file__) + "/../data/test" + str(file_count) + ".bag"
-        #print "file name: ", os.path.dirname(__file__) + "/../data/test"
+        FILENAME = data_dir + "test" + str(file_count) + ".bag"
         bag = rosbag.Bag(FILENAME, 'w')
         
     
@@ -52,8 +53,9 @@ def callback(message, id):
 
 if __name__ == "__main__":
     rospy.init_node("listener")
-    sub = rospy.Subscriber("/chatter", String, callback, callback_args=0)
-    sub2 = rospy.Subscriber("/reporter", String, callback, callback_args=1)
+    record_topic = rospy.Subscriber("/chatter", String, callback, callback_args=0)
+
+    reporter = rospy.Subscriber("/reporter", String, callback, callback_args=1)
 
     rospy.spin()
 
