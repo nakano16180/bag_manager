@@ -7,32 +7,36 @@ import rosbag
 
 import time
 import os
+import yaml
 
-sub_count = 0  #ファイルに書き込むサイズ制限用
+sub_count = 6441  #ファイルに書き込むサイズ制限用(byte)
 file_count = 0
+start_time = 0
+
 data_dir = os.path.dirname(__file__) + "/../data/"
 
 bag = rosbag.Bag(data_dir + "test.bag", 'w')
 
 def callback(message, id):
-    global file_count, sub_count, bag
+    global file_count, sub_count, start_time, bag
 
     if str(id) == "0":
-        if sub_count < 20:
-            print "recieved: /chatter"
-            #print message.data
+        if bag.size < sub_count:  # 通常時書き込みの条件.  (rospy.get_time() - start_time) < 600 などにすると時間でローテーションできる
             try:
                 bag.write("/chatter", message)
-                sub_count += 1
+                print bag.size
+                print rospy.get_time() - start_time  # second
             except:
                 pass
         else:
             bag.close()
-            sub_count = 0
             file_count += 1
+            #info = yaml.load(rosbag.Bag(bag.filename, 'r')._get_yaml_info())
+            #print info["size"]
             FILENAME = data_dir + "test" + str(file_count) + ".bag"
             bag = rosbag.Bag(FILENAME, 'w')
-    else:
+            print bag.filename
+    else:  # イベント発生時の処理
         print "recieved: /reporter"
         bag.close()
 
@@ -53,6 +57,8 @@ def callback(message, id):
 
 if __name__ == "__main__":
     rospy.init_node("listener")
+
+    start_time = rospy.get_time()
     record_topic = rospy.Subscriber("/chatter", String, callback, callback_args=0)
 
     reporter = rospy.Subscriber("/reporter", String, callback, callback_args=1)
