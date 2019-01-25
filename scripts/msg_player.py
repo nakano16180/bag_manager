@@ -1,6 +1,7 @@
 import rosbag
 
 import time
+import yaml, json
 
 def bag_read(msg, indent):
     try:
@@ -9,6 +10,13 @@ def bag_read(msg, indent):
             bag_read(msg.__getattribute__(s), int(indent+1))
     except:
         print indent*"    ", msg
+
+def get_info(bag_file):
+    return yaml.load(rosbag.Bag(bag_file, 'r')._get_yaml_info())
+
+
+info = get_info("../data/test.bag")
+print json.dumps(info, indent=4)
 
 bag = rosbag.Bag("../data/test.bag")
 
