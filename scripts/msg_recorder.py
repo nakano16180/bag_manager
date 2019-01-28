@@ -73,6 +73,7 @@ if __name__ == "__main__":
     print rospy.get_published_topics()  # published topic list
 
     record_topic = rospy.Subscriber("/chatter", String, callback, callback_args=0)
+    record_topic2 = rospy.Subscriber("/chatter2", String, callback, callback_args=0)
 
     reporter = rospy.Subscriber("/reporter", String, callback, callback_args=1)
 
