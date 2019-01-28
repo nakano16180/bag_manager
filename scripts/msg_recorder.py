@@ -9,7 +9,8 @@ import time
 import os
 import yaml
 
-sub_count = 6441  #ファイルに書き込むサイズ制限用(byte)
+size_thres = 6441  #ファイルに書き込むサイズ制限用(byte)
+time_thres = None  #600 # second
 file_count = 0
 start_time = 0
 
@@ -18,10 +19,18 @@ data_dir = os.path.dirname(__file__) + "/../data/"
 bag = rosbag.Bag(data_dir + "test.bag", 'w')
 
 def callback(message, id):
-    global file_count, sub_count, start_time, bag
+    global file_count, size_thres, time_thres, start_time, bag
 
     if str(id) == "0":
-        if bag.size < sub_count:  # 通常時書き込みの条件.  (rospy.get_time() - start_time) < 600 などにすると時間でローテーションできる
+        if size_thres and (bag.size < size_thres):  # 通常時書き込みの条件. 
+            try:
+                bag.write("/chatter", message)
+                print bag.size
+                print "chunk_th: ", bag.chunk_threshold
+                print "chunk_offset: ", bag._get_chunk_offset()
+            except:
+                pass
+        elif time_thres and (rospy.get_time() - start_time) < time_thres:
             try:
                 bag.write("/chatter", message)
                 print bag.size
@@ -32,7 +41,7 @@ def callback(message, id):
             bag.close()
             file_count += 1
             #info = yaml.load(rosbag.Bag(bag.filename, 'r')._get_yaml_info())
-            #print info["size"]
+            #print "result_size: ", info["size"]
             FILENAME = data_dir + "test" + str(file_count) + ".bag"
             bag = rosbag.Bag(FILENAME, 'w')
             print bag.filename
@@ -56,9 +65,13 @@ def callback(message, id):
     
 
 if __name__ == "__main__":
+    import sys
     rospy.init_node("listener")
 
     start_time = rospy.get_time()
+    #print sys.argv[1:]  # コマンドライン引数
+    print rospy.get_published_topics()  # published topic list
+
     record_topic = rospy.Subscriber("/chatter", String, callback, callback_args=0)
 
     reporter = rospy.Subscriber("/reporter", String, callback, callback_args=1)
