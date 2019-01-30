@@ -21,10 +21,11 @@ bag = rosbag.Bag(data_dir + "test.bag", 'w')
 def callback(message, id):
     global file_count, size_thres, time_thres, start_time, bag
 
-    if str(id) == "0":
+    if str(id[0]) == "0":
         if size_thres and (bag.size < size_thres):  # 通常時書き込みの条件. 
             try:
-                bag.write("/chatter", message)
+                print id[1]  # topic name
+                bag.write(id[1], message)
                 print bag.size
                 print "chunk_th: ", bag.chunk_threshold
                 print "chunk_offset: ", bag._get_chunk_offset()
@@ -32,7 +33,7 @@ def callback(message, id):
                 pass
         elif time_thres and (rospy.get_time() - start_time) < time_thres:
             try:
-                bag.write("/chatter", message)
+                bag.write(id[1], message)
                 print bag.size
                 print rospy.get_time() - start_time  # second
             except:
@@ -40,8 +41,7 @@ def callback(message, id):
         else:
             bag.close()
             file_count += 1
-            #info = yaml.load(rosbag.Bag(bag.filename, 'r')._get_yaml_info())
-            #print "result_size: ", info["size"]
+            
             FILENAME = data_dir + "test" + str(file_count) + ".bag"
             bag = rosbag.Bag(FILENAME, 'w')
             print bag.filename
@@ -72,8 +72,10 @@ if __name__ == "__main__":
     #print sys.argv[1:]  # コマンドライン引数
     print rospy.get_published_topics()  # published topic list
 
-    record_topic = rospy.Subscriber("/chatter", String, callback, callback_args=0)
-    record_topic2 = rospy.Subscriber("/chatter2", String, callback, callback_args=0)
+    topic_name = "/chatter"
+    record_topic = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
+    topic_name = "/chatter2"
+    record_topic2 = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
 
     reporter = rospy.Subscriber("/reporter", String, callback, callback_args=1)
 
