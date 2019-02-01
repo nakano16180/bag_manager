@@ -7,7 +7,7 @@ from std_msgs.msg import String
 rospy.init_node("tester")
 
 pub = rospy.Publisher("reporter", String, queue_size=10)
-rate = rospy.Rate(0.5)
+rate = rospy.Rate(0.1)
 
 count = 0
 
