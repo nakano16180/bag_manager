@@ -1,0 +1,4 @@
+<launch>
+    <node pkg="bag_manager" name="talker" type="talker.py" />
+    <node pkg="bag_manager" name="talker2" type="talker2.py" />
+</launch>
