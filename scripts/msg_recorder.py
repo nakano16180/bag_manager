@@ -11,14 +11,14 @@ import common
 logger = common.genlogger()
 
 
-size_thres = 6441  #ファイルに書き込むサイズ制限用(byte)
-time_thres = None  #600 # second
-file_count = 0
-start_time = 0
-
-data_dir = os.path.dirname(__file__) + "/../data/"
+#size_thres = 6441  #ファイルに書き込むサイズ制限用(byte)
+#time_thres = None  #600 # second
+#file_count = 0
+#start_time = 0
 
 reporter_time = []
+cmd = None
+pid = None
 
 def getargs():
     parser = argparse.ArgumentParser()
@@ -34,13 +34,22 @@ def getargs():
     return args
 
 def callback(message, id):
-
+    global reporter_time, cmd, pid
     if str(id[0]) == "0":
-        print id[1]  # topic name
+        print "topic: ", id[1]  # topic name
+        print "reported count", len(reporter_time)
+        if len(reporter_time) > 0:
+            print "time from reported: ", rospy.get_time() - reporter_time[0]
+            if rospy.get_time() - reporter_time[0] > 10:
+                reporter_time = []
+                pid.kill()
+
+                pid = common.execmd(cmd, blocking=False) # non-blocking
+                print "new pid: ", pid.pid
     else:  # イベント発生時の処理
         print "recieved: "+str(id[1])
         reporter_time.append(rospy.get_time())
-        print reporter_time[0], reporter_time[-1]
+        print "pid: ", pid.pid
         
     
     
@@ -72,7 +81,8 @@ if __name__ == "__main__":
     cmd = "rosbag record --split --size {} -o {} {}"
     cmd = cmd.format(args.size*1024, prefix, topics)
     logger.info("execute command: {}".format(cmd))
-    #pid = common.execmd(cmd, blocking=False) # non-blocking
+    pid = common.execmd(cmd, blocking=False) # non-blocking
+    print "pid: ", pid.pid
 
     topic_name = "/chatter"
     record_topic = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
@@ -80,6 +90,7 @@ if __name__ == "__main__":
     record_topic2 = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
 
     topic_name = "/reporter"
-    reporter = rospy.Subscriber(topic_name, String, callback, callback_args=[1, topic_name])
+    reporter = rospy.Subscriber(topic_name, String, callback, callback_args=[1, topic_name, pid])
 
     rospy.spin()
+    pid.kill()
