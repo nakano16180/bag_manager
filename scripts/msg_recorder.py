@@ -11,10 +11,7 @@ import common
 logger = common.genlogger()
 
 
-#size_thres = 6441  #ファイルに書き込むサイズ制限用(byte)
-#time_thres = None  #600 # second
-#file_count = 0
-#start_time = 0
+buffer_time_thres = 60  #second
 
 reporter_time = []
 cmd = None
@@ -34,13 +31,13 @@ def getargs():
     return args
 
 def callback(message, id):
-    global reporter_time, cmd, pid
+    global reporter_time, cmd, pid, buffer_time_thres
     if str(id[0]) == "0":
         print "topic: ", id[1]  # topic name
         print "reported count", len(reporter_time)
         if len(reporter_time) > 0:
             print "time from reported: ", rospy.get_time() - reporter_time[0]
-            if rospy.get_time() - reporter_time[0] > 10:
+            if rospy.get_time() - reporter_time[0] > buffer_time_thres:
                 reporter_time = []
                 pid.kill()
 
@@ -90,7 +87,7 @@ if __name__ == "__main__":
     record_topic2 = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
 
     topic_name = "/reporter"
-    reporter = rospy.Subscriber(topic_name, String, callback, callback_args=[1, topic_name, pid])
+    reporter = rospy.Subscriber(topic_name, String, callback, callback_args=[1, topic_name])
 
     rospy.spin()
     pid.kill()
