@@ -23,7 +23,7 @@ def normpath(path):
 
 def execmd(cmd, blocking=True):
     p = subprocess.Popen(shlex.split(cmd),
-        stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+        stderr=subprocess.PIPE, stdout=subprocess.PIPE, preexec_fn=os.setsid)
     if blocking: p.wait()
     return p
 

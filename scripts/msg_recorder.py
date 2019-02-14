@@ -42,8 +42,7 @@ def callback(message, id):
             print "time from reported: ", rospy.get_time() - reporter_time
             if rospy.get_time() - reporter_time > buffer_time_thres:
                 reporter_time = None
-                pid.kill()
-                #os.killpg(pid.pid, signal.SIGINT)
+                os.killpg(pid.pid, signal.SIGINT)
 
                 pid = common.execmd(cmd, blocking=False) # non-blocking
                 print "new pid: ", pid.pid
@@ -95,4 +94,4 @@ if __name__ == "__main__":
     reporter = rospy.Subscriber(topic_name, String, callback, callback_args=[1, topic_name])
 
     rospy.spin()
-    pid.kill()
+    os.killpg(pid.pid, signal.SIGINT)
