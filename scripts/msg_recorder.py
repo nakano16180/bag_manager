@@ -10,10 +10,13 @@ import time, signal, argparse
 import common
 logger = common.genlogger()
 
+#from .common import logger
+#logger = logger.genlogger()
 
-buffer_time_thres = 60  #second
+buffer_time_thres = 30  #second
 
-reporter_time = []
+reporter_time = None
+reported_count = 0
 cmd = None
 pid = None
 
@@ -31,21 +34,23 @@ def getargs():
     return args
 
 def callback(message, id):
-    global reporter_time, cmd, pid, buffer_time_thres
+    global reporter_time, reported_count, cmd, pid, buffer_time_thres
     if str(id[0]) == "0":
         print "topic: ", id[1]  # topic name
-        print "reported count", len(reporter_time)
-        if len(reporter_time) > 0:
-            print "time from reported: ", rospy.get_time() - reporter_time[0]
-            if rospy.get_time() - reporter_time[0] > buffer_time_thres:
-                reporter_time = []
+        print "reported count", reported_count
+        if not reporter_time == None :
+            print "time from reported: ", rospy.get_time() - reporter_time
+            if rospy.get_time() - reporter_time > buffer_time_thres:
+                reporter_time = None
                 pid.kill()
+                #os.killpg(pid.pid, signal.SIGINT)
 
                 pid = common.execmd(cmd, blocking=False) # non-blocking
                 print "new pid: ", pid.pid
     else:  # イベント発生時の処理
         print "recieved: "+str(id[1])
-        reporter_time.append(rospy.get_time())
+        reporter_time = rospy.get_time()
+        reported_count += 1
         print "pid: ", pid.pid
         
     
