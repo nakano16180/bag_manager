@@ -5,13 +5,11 @@ import rospy
 from std_msgs.msg import String
 import rosbag
 
-import os
+import os, glob
 import time, signal, argparse
-import common
-logger = common.genlogger()
+from helper import common, logger
+lg = logger.genlogger()
 
-#from .common import logger
-#logger = logger.genlogger()
 
 buffer_time_thres = 30  #second
 
@@ -44,8 +42,11 @@ def callback(message, id):
                 reporter_time = None
                 os.killpg(pid.pid, signal.SIGINT)
 
-                pid = common.execmd(cmd, blocking=False) # non-blocking
+                pid = logger.execmd(cmd, blocking=False) # non-blocking
                 print "new pid: ", pid.pid
+
+                reported_bag = sorted(glob.glob(common.TMP_PATH + "/*.bag"))
+                print reported_bag[-1]
     else:  # イベント発生時の処理
         print "recieved: "+str(id[1])
         reporter_time = rospy.get_time()
@@ -65,24 +66,24 @@ if __name__ == "__main__":
         global is_shutdown
         is_shutdown = True
     signal.signal(signal.SIGALRM, sigterm)
-    logger.info("kill by Ctrl-C")
+    lg.info("kill by Ctrl-C")
     # rosbag record command
     args = getargs()
     if args.all:
         topics = "--all"
-        logger.info("record all topics")
+        lg.info("record all topics")
     else:
         topics = " ".join(args.topics)
-        logger.info("record topics: {}".format(topics))
+        lg.info("record topics: {}".format(topics))
      # prepare record
     prefix = "{}/{}".format(args.dir, args.prefix)
-    logger.info("save directory: {}".format(args.dir))
-    logger.info("rosbag prefix: {}_*.bag".format(prefix))
+    lg.info("save directory: {}".format(args.dir))
+    lg.info("rosbag prefix: {}_*.bag".format(prefix))
     # execute command
     cmd = "rosbag record --split --size {} -o {} {}"
     cmd = cmd.format(args.size*1024, prefix, topics)
-    logger.info("execute command: {}".format(cmd))
-    pid = common.execmd(cmd, blocking=False) # non-blocking
+    lg.info("execute command: {}".format(cmd))
+    pid = logger.execmd(cmd, blocking=False) # non-blocking
     print "pid: ", pid.pid
 
     topic_name = "/chatter"
