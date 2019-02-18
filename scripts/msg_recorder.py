@@ -5,7 +5,7 @@ import rospy
 from std_msgs.msg import String
 import rosbag
 
-import os, glob
+import os, glob, shutil
 import time, signal, argparse
 from helper import common, logger
 lg = logger.genlogger()
@@ -15,6 +15,7 @@ buffer_time_thres = 30  #second
 
 reporter_time = None
 reported_count = 0
+reported_bag_name = []
 cmd = None
 pid = None
 
@@ -31,8 +32,16 @@ def getargs():
     common.gendir(args.dir) # create directory
     return args
 
+def mv_repoted_bag():
+    global reported_bag_name
+    for bag in reported_bag_name:
+        print "reported bag: ", bag
+        if os.path.exists(bag+".bag"):
+            old_path = bag+'.bag'
+            shutil.move(old_path, common.BAG_PATH+'/')
+
 def callback(message, id):
-    global reporter_time, reported_count, cmd, pid, buffer_time_thres
+    global reporter_time, reported_count, reported_bag_name, cmd, pid, buffer_time_thres
     if str(id[0]) == "0":
         print "topic: ", id[1]  # topic name
         print "reported count", reported_count
@@ -43,15 +52,14 @@ def callback(message, id):
                 os.killpg(pid.pid, signal.SIGINT)
 
                 pid = logger.execmd(cmd, blocking=False) # non-blocking
-                print "new pid: ", pid.pid
 
-                reported_bag = sorted(glob.glob(common.TMP_PATH + "/*.bag"))
-                print reported_bag[-1]
     else:  # イベント発生時の処理
         print "recieved: "+str(id[1])
         reporter_time = rospy.get_time()
         reported_count += 1
-        print "pid: ", pid.pid
+        reported_bag = sorted(glob.glob(common.TMP_PATH + "/*.active"))
+        print reported_bag
+        reported_bag_name.append(reported_bag[-1].split('.')[0])
         
     
     
@@ -84,7 +92,6 @@ if __name__ == "__main__":
     cmd = cmd.format(args.size*1024, prefix, topics)
     lg.info("execute command: {}".format(cmd))
     pid = logger.execmd(cmd, blocking=False) # non-blocking
-    print "pid: ", pid.pid
 
     topic_name = "/chatter"
     record_topic = rospy.Subscriber(topic_name, String, callback, callback_args=[0, topic_name])
@@ -96,3 +103,4 @@ if __name__ == "__main__":
 
     rospy.spin()
     os.killpg(pid.pid, signal.SIGINT)
+    mv_repoted_bag()
