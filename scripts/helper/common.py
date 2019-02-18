@@ -2,9 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import os, sys, datetime, hashlib
+from os.path import join, dirname
+from dotenv import load_dotenv
 import subprocess, shlex, logging
 
-HOME_PATH = os.path.expanduser("~/autologger")
+dotenv_path = join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+HOME_PATH = os.environ.get('HOME_PATH')
 LOG_PATH = "{}/log".format(HOME_PATH)
 TMP_PATH = "{}/tmp".format(HOME_PATH)
 BAG_PATH = "{}/bag".format(HOME_PATH)
